@@ -1,8 +1,156 @@
-import Head from 'next/head'
-import Image from 'next/image'
-import styles from '../styles/Home.module.css'
+import Head from "next/head";
+import Image from "next/image";
+import styles from "../styles/Home.module.css";
+import { useState, useEffect } from "react";
+import { Wallet } from "ethers";
+import {
+  constructMediaData,
+  sha256FromBuffer,
+  generateMetadata,
+  isMediaDataVerified,
+  Zora,
+  constructBidShares,
+} from "@zoralabs/zdk";
+import { ethers } from "ethers";
+// import { addresses } from "@zoralabs/sdk";
+// const rinkebyMedia = addresses["rinkeby"].media;
+// const rinkebyMarket = addresses["rinkeby"].market;
 
 export default function Home() {
+  const [currentAccount, setCurrentAccount] = useState("");
+  const [minted, setMinted] = useState(0);
+  const [currentNetwork, setCurrentNetwork] = useState(0);
+  const [zoraInstance, setZoraInstance] = useState("");
+
+  const connectWallet = async () => {
+    // const provider = new ethers.providers.JsonRpcProvider(rpcURL);
+    // let wallet = Wallet.createRandom();
+    // wallet = wallet.connect(provider);
+    // console.log(wallet);
+    // setWallet(wallet);
+    // setCurrentAccount(wallet.address);
+    // const zora = new Zora(wallet, 4); //passing in 4 for Rinkeby
+    // console.log(zora);
+    try {
+      const { ethereum } = window;
+
+      if (!ethereum) {
+        alert("Get MetaMask!");
+        return;
+      }
+
+      // const accounts = await ethereum.request({
+      //   method: "eth_requestAccounts",
+      // });
+
+      setCurrentNetwork(parseInt(ethereum.networkVersion));
+
+      // console.log("Connected", accounts[0]);
+      // setCurrentAccount(accounts[0]);
+
+      const provider = new ethers.providers.JsonRpcProvider(rpcURL);
+      const signer = provider.getSigner();
+
+      let wallet = new ethers.Wallet(privatekey, provider);
+      setCurrentAccount(wallet.address);
+      const zora = new Zora(wallet, 4);
+      setZoraInstance(zora);
+      console.log(zora);
+
+      // Setup listener! This is for the case where a user comes to our site
+      // and connected their wallet for the first time.
+      // setupEventListener();
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const mintZNFT = async () => {
+    // const zora = new Zora(wallet, 4); //passing in 4 for Rinkeby
+    console.log(zoraInstance);
+
+    const metadataJSON = generateMetadata("zora-20210101", {
+      description: "",
+      mimeType: "audio/mpeg",
+      name: "Africa song",
+      version: "zora-20210604",
+      image_url:
+        "https://ipfs.io/ipfs/QmPUCX9avkRDxYmhHrdiZEPJH2g73XVvdVSBMbLvjVgBG1",
+    });
+
+    console.log(metadataJSON);
+
+    const contentHash = sha256FromBuffer(
+      Buffer.from(
+        "https://ipfs.io/ipfs/Qmb19iVyfK3zCfGKFe7xzA5wYpY7ydMfchgSzwg2uscfSv/"
+      )
+    );
+    const metadataHash = sha256FromBuffer(Buffer.from(metadataJSON));
+
+    const mediaData = constructMediaData(
+      "https://ipfs.io/ipfs/Qmb19iVyfK3zCfGKFe7xzA5wYpY7ydMfchgSzwg2uscfSv/",
+      "https://ipfs.io/ipfs/QmcFpxjdGFNGQSqz4E9BYV1SASv5Ze1BvY7xuQvvS9JeYQ/",
+      contentHash,
+      metadataHash
+    );
+
+    // Verifies hashes of content to ensure the hashes match
+    // const verified = await isMediaDataVerified(mediaData);
+    // if (!verified) {
+    //   throw new Error("MediaData not valid, do not mint");
+    // }
+
+    // BidShares should sum up to 100%
+    const bidShares = constructBidShares(
+      10, // creator share percentage
+      90, // owner share percentage
+      0 // prevOwner share percentage
+    );
+    const tx = await zoraInstance.mint(mediaData, bidShares);
+    console.log(tx.hash);
+    return new Promise((resolve) => {
+      // This listens for the nft transfer event
+      zoraInstance.media.on("Transfer", (from, to, tokenId) => {
+        if (
+          from === "0x0000000000000000000000000000000000000000" &&
+          to === tx.from.address
+        ) {
+          promise.resolve(tokenId);
+        }
+      });
+    });
+  };
+
+  const renderNotConnectedContainer = () => (
+    <button onClick={connectWallet}>Connect to Wallet</button>
+  );
+
+  // useEffect(() => {
+  //   checkIfWalletIsConnected();
+  // }, []);
+
+  const renderMintUI = () => (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "center",
+        flexDirection: "column",
+        alignItems: "center",
+      }}
+    >
+      {/* {currentNetwork !== 42161 && currentAccount && <IncorrectNetwork />} */}
+      {/* <button onClick={askContractToMintNft}>
+        {minting ? "Minting please wait..." : "Mint NFT"}
+      </button> */}
+      <button onClick={mintZNFT}>mint</button>
+    </div>
+  );
+
+  // const fetch = async () => {
+  //   const totalSupply = await Zora.fetchTotalMedia();
+  //   console.log(totalSupply);
+  // };
+
   return (
     <div className={styles.container}>
       <Head>
@@ -15,55 +163,9 @@ export default function Home() {
         <h1 className={styles.title}>
           Welcome to <a href="https://nextjs.org">Next.js!</a>
         </h1>
-
-        <p className={styles.description}>
-          Get started by editing{' '}
-          <code className={styles.code}>pages/index.js</code>
-        </p>
-
-        <div className={styles.grid}>
-          <a href="https://nextjs.org/docs" className={styles.card}>
-            <h2>Documentation &rarr;</h2>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
-
-          <a href="https://nextjs.org/learn" className={styles.card}>
-            <h2>Learn &rarr;</h2>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/master/examples"
-            className={styles.card}
-          >
-            <h2>Examples &rarr;</h2>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
-
-          <a
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-          >
-            <h2>Deploy &rarr;</h2>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
-        </div>
+        <p>Wallet connected to: {currentAccount}</p>
+        {currentAccount === "" ? renderNotConnectedContainer() : renderMintUI()}
       </main>
-
-      <footer className={styles.footer}>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <span className={styles.logo}>
-            <Image src="/vercel.svg" alt="Vercel Logo" width={72} height={16} />
-          </span>
-        </a>
-      </footer>
     </div>
-  )
+  );
 }
