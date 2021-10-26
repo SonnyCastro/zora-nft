@@ -3,6 +3,12 @@ import Image from "next/image";
 import styles from "../styles/Home.module.css";
 import { useState, useEffect } from "react";
 import { Wallet } from "ethers";
+import "bootstrap/dist/css/bootstrap.css";
+import { Form } from "react-bootstrap";
+import axios from "axios";
+
+// import { pinTrackToIPFS } from "../lib/uploadFile";
+// require("dotenv").config();
 import {
   constructMediaData,
   sha256FromBuffer,
@@ -13,6 +19,9 @@ import {
 } from "@zoralabs/zdk";
 import { ethers } from "ethers";
 // import { addresses } from "@zoralabs/sdk";
+
+const pinataApiKey = process.env.PINATA_API_KEY;
+const pinataSecretApiKey = process.env.PINATA_SECRET_KEY;
 // const rinkebyMedia = addresses["rinkeby"].media;
 // const rinkebyMarket = addresses["rinkeby"].market;
 
@@ -21,16 +30,13 @@ export default function Home() {
   const [minted, setMinted] = useState(0);
   const [currentNetwork, setCurrentNetwork] = useState(0);
   const [zoraInstance, setZoraInstance] = useState("");
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [image, setImage] = useState("");
+  const [type, setType] = useState("");
+  const [track, setTrack] = useState("");
 
   const connectWallet = async () => {
-    // const provider = new ethers.providers.JsonRpcProvider(rpcURL);
-    // let wallet = Wallet.createRandom();
-    // wallet = wallet.connect(provider);
-    // console.log(wallet);
-    // setWallet(wallet);
-    // setCurrentAccount(wallet.address);
-    // const zora = new Zora(wallet, 4); //passing in 4 for Rinkeby
-    // console.log(zora);
     try {
       const { ethereum } = window;
 
@@ -39,16 +45,7 @@ export default function Home() {
         return;
       }
 
-      // const accounts = await ethereum.request({
-      //   method: "eth_requestAccounts",
-      // });
-
-      setCurrentNetwork(parseInt(ethereum.networkVersion));
-
-      // console.log("Connected", accounts[0]);
-      // setCurrentAccount(accounts[0]);
-
-      const provider = new ethers.providers.JsonRpcProvider(rpcURL);
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
       const signer = provider.getSigner();
 
       let wallet = new ethers.Wallet(privatekey, provider);
@@ -66,33 +63,44 @@ export default function Home() {
   };
 
   const mintZNFT = async () => {
-    // const zora = new Zora(wallet, 4); //passing in 4 for Rinkeby
     console.log(zoraInstance);
 
-    const metadataJSON = generateMetadata("zora-20210101", {
-      description: "",
-      mimeType: "audio/mpeg",
-      name: "Africa song",
+    const metadataJSON = generateMetadata("zora-20210604", {
+      description: "Testing metaData",
+      mimeType: "image/jpeg",
+      name: ".eth",
       version: "zora-20210604",
-      image_url:
-        "https://ipfs.io/ipfs/QmPUCX9avkRDxYmhHrdiZEPJH2g73XVvdVSBMbLvjVgBG1",
+      image:
+        "https://storage.googleapis.com/opensea-prod.appspot.com/puffs/3.png",
+      animation_url:
+        "https://ipfs.io/ipfs/QmfTM8uEN9xbkC7uutU64EXG9gQLBLkeF6cwC47bqhgsfv",
+      // attributes: [
+      //   { trait_type: "Base", value: "Starfish" },
+      //   { trait_type: "Eyes", value: "Big" },
+      // ],
     });
 
     console.log(metadataJSON);
 
     const contentHash = sha256FromBuffer(
       Buffer.from(
-        "https://ipfs.io/ipfs/Qmb19iVyfK3zCfGKFe7xzA5wYpY7ydMfchgSzwg2uscfSv/"
+        "https://ipfs.io/ipfs/QmfTM8uEN9xbkC7uutU64EXG9gQLBLkeF6cwC47bqhgsfv"
       )
     );
     const metadataHash = sha256FromBuffer(Buffer.from(metadataJSON));
+    const contentURI =
+      "https://ipfs.io/ipfs/QmfTM8uEN9xbkC7uutU64EXG9gQLBLkeF6cwC47bqhgsfv";
+    const metaDataURI =
+      "https://ipfs.io/ipfs/QmQYAo6xSABjVuHp5MoR6vzJ9J5yZGLDWhFePKTNZp4xHU";
 
     const mediaData = constructMediaData(
-      "https://ipfs.io/ipfs/Qmb19iVyfK3zCfGKFe7xzA5wYpY7ydMfchgSzwg2uscfSv/",
-      "https://ipfs.io/ipfs/QmcFpxjdGFNGQSqz4E9BYV1SASv5Ze1BvY7xuQvvS9JeYQ/",
+      contentURI,
+      metaDataURI,
       contentHash,
       metadataHash
     );
+
+    console.log(mediaData);
 
     // Verifies hashes of content to ensure the hashes match
     // const verified = await isMediaDataVerified(mediaData);
@@ -107,6 +115,8 @@ export default function Home() {
       0 // prevOwner share percentage
     );
     const tx = await zoraInstance.mint(mediaData, bidShares);
+    console.log(mediaData);
+    console.log(tx);
     console.log(tx.hash);
     return new Promise((resolve) => {
       // This listens for the nft transfer event
@@ -125,10 +135,6 @@ export default function Home() {
     <button onClick={connectWallet}>Connect to Wallet</button>
   );
 
-  // useEffect(() => {
-  //   checkIfWalletIsConnected();
-  // }, []);
-
   const renderMintUI = () => (
     <div
       style={{
@@ -138,17 +144,34 @@ export default function Home() {
         alignItems: "center",
       }}
     >
-      {/* {currentNetwork !== 42161 && currentAccount && <IncorrectNetwork />} */}
-      {/* <button onClick={askContractToMintNft}>
-        {minting ? "Minting please wait..." : "Mint NFT"}
-      </button> */}
       <button onClick={mintZNFT}>mint</button>
     </div>
   );
 
-  // const fetch = async () => {
-  //   const totalSupply = await Zora.fetchTotalMedia();
-  //   console.log(totalSupply);
+  // function handleSubmit(track) {
+  //   try {
+  //     axios.post("/api/upload", track);
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  // }
+
+  // const handleSubmit = async () => {
+  //   try {
+  //     const response = await fetch("http://localhost:3000/api/upload", {
+  //       method: "POST",
+  //       body: JSON.stringify({ track }),
+  //       headers: {
+  //         // "Content-Type": "application/json",
+  //         // pinata_api_key: pinataApiKey,/
+  //         // pinata_secret_api_key: pinataSecretApiKey,
+  //       },
+  //     });
+  //     const data = await response.json();
+  //     console.log(data);
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
   // };
 
   return (
@@ -165,6 +188,46 @@ export default function Home() {
         </h1>
         <p>Wallet connected to: {currentAccount}</p>
         {currentAccount === "" ? renderNotConnectedContainer() : renderMintUI()}
+
+        <form method="post" action="/api/upload">
+          <div className="form-group">
+            <label htmlFor="name">Name</label>
+            <input
+              type="name"
+              className="form-control"
+              id="name"
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Enter name"
+            />
+          </div>
+          <div className="form-group">
+            <label htmlFor="desc">Description</label>
+            <textarea
+              className="form-control"
+              id="desc"
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="description"
+            />
+          </div>
+          <Form.Group controlId="formFile" className="mb-3">
+            <Form.Label>Insert File</Form.Label>
+            <Form.Control
+              type="file"
+              onChange={(e) => {
+                // console.log(e.target.value);
+                // setType(e.target.files[0].type);
+                setTrack(e.target.files[0]);
+              }}
+            />
+          </Form.Group>
+          <button
+            type="submit"
+            // onClick={handleSubmit()}
+            className="btn btn-primary"
+          >
+            Submit
+          </button>
+        </form>
       </main>
     </div>
   );
