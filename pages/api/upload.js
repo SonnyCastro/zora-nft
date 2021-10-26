@@ -6,35 +6,36 @@ const fs = require("fs");
 const FormData = require("form-data");
 
 export default function handler(req, res) {
-  console.log("this is res.body", req.body);
+  debugger
+  console.log("this is req.body", req.body);
   if (req.method === "GET") {
     res.status(200).json({ name: "Son" });
   } else if (req.method === "POST") {
-    console.log("post", req);
-    // const resp = res;
+    console.log("post success", req.body); // equals to track path
+    pinTrackToIPFS(req.body);
+    // pinTrackToIPFS('./africa.mp3');
   }
   res.status(201).json(req);
 }
 
-// const pinTrackToIPFS = async (track) => {
-//   console.log(track);
-//   let data = new FormData();
-//   data.append("file", fs.createReadStream(track));
+const pinTrackToIPFS = async (track) => {
+  let data = new FormData();
+  data.append("file", fs.createReadStream(track));
 
-//   const url = `https://api.pinata.cloud/pinning/pinFileToIPFS`;
-//   axios
-//     .post(url, data, {
-//       maxContentLength: "Infinity",
-//       headers: {
-//         "Content-Type": `multipart/form-data; boundary=${data._boundary}`,
-//         pinata_api_key: pinataApiKey,
-//         pinata_secret_api_key: pinataSecretApiKey,
-//       },
-//     })
-//     .then((res) => console.log(res));
+  const url = `https://api.pinata.cloud/pinning/pinFileToIPFS`;
+  axios
+    .post(url, data, {
+      maxContentLength: "Infinity",
+      headers: {
+        "Content-Type": `multipart/form-data; boundary=${data._boundary}`,
+        pinata_api_key: pinataApiKey,
+        pinata_secret_api_key: pinataSecretApiKey,
+      },
+    })
+    .then((res) => console.log(res));
 
-//   // res.status(200).json({ track res });
-// };
+  // res.status(200).json({ track res });
+};
 
 // const pinMetadataToIPFS = async (metadata) => {
 //   const url = `https://api.pinata.cloud/pinning/pinFileToIPFS`;

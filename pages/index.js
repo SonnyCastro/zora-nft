@@ -148,13 +148,17 @@ export default function Home() {
     </div>
   );
 
-  // function handleSubmit(track) {
-  //   try {
-  //     axios.post("/api/upload", track);
-  //   } catch (error) {
-  //     console.log(error);
-  //   }
-  // }
+  const handleSubmit = track => {
+    console.log(track);
+    axios.post("/api/upload", { track: track })
+    .then(response => {
+      console.log('posted');
+      console.log(response);
+    })
+    .catch(error => {
+      console.log(error);
+    });
+  }
 
   // const handleSubmit = async () => {
   //   try {
@@ -189,7 +193,11 @@ export default function Home() {
         <p>Wallet connected to: {currentAccount}</p>
         {currentAccount === "" ? renderNotConnectedContainer() : renderMintUI()}
 
-        <form method="post" action="/api/upload">
+        <form
+          onSubmit={event => {
+            event.preventDefault();
+            handleSubmit(track);
+          }}>
           <div className="form-group">
             <label htmlFor="name">Name</label>
             <input
@@ -216,7 +224,7 @@ export default function Home() {
               onChange={(e) => {
                 // console.log(e.target.value);
                 // setType(e.target.files[0].type);
-                setTrack(e.target.files[0]);
+                setTrack(e.target.value);
               }}
             />
           </Form.Group>
