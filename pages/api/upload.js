@@ -7,18 +7,19 @@ const FormData = require("form-data");
 
 export default function handler(req, res) {
   debugger
-  console.log("this is req.body", req.body);
+  console.log("this is req.body", req.body.track);
   if (req.method === "GET") {
     res.status(200).json({ name: "Son" });
   } else if (req.method === "POST") {
-    console.log("post success", req.body); // equals to track path
-    pinTrackToIPFS(req.body);
+    console.log("post success", req.body.track); // equals to track path
+    pinTrackToIPFS(req.body.track);
     // pinTrackToIPFS('./africa.mp3');
   }
   res.status(201).json(req);
 }
 
 const pinTrackToIPFS = async (track) => {
+  console.log("this is the track on the server", track)
   let data = new FormData();
   data.append("file", fs.createReadStream(track));
 

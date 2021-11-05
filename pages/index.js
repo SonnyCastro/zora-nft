@@ -22,6 +22,9 @@ import { ethers } from "ethers";
 
 const pinataApiKey = process.env.PINATA_API_KEY;
 const pinataSecretApiKey = process.env.PINATA_SECRET_KEY;
+
+
+// make sure to delete ^
 // const rinkebyMedia = addresses["rinkeby"].media;
 // const rinkebyMarket = addresses["rinkeby"].market;
 
@@ -149,15 +152,15 @@ export default function Home() {
   );
 
   const handleSubmit = track => {
-    console.log(track);
+    console.log("this is the track", track);
     axios.post("/api/upload", { track: track })
-    .then(response => {
-      console.log('posted');
-      console.log(response);
-    })
-    .catch(error => {
-      console.log(error);
-    });
+      .then(response => {
+        console.log('posted');
+        console.log(response);
+      })
+      .catch(error => {
+        console.log(error);
+      });
   }
 
   // const handleSubmit = async () => {
@@ -222,7 +225,7 @@ export default function Home() {
             <Form.Control
               type="file"
               onChange={(e) => {
-                // console.log(e.target.value);
+                console.log(e.target.files[0]);
                 // setType(e.target.files[0].type);
                 setTrack(e.target.value);
               }}
