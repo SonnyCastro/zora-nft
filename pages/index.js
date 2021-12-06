@@ -23,11 +23,6 @@ import { ethers } from "ethers";
 const pinataApiKey = process.env.PINATA_API_KEY;
 const pinataSecretApiKey = process.env.PINATA_SECRET_KEY;
 
-
-// make sure to delete ^
-// const rinkebyMedia = addresses["rinkeby"].media;
-// const rinkebyMarket = addresses["rinkeby"].market;
-
 export default function Home() {
   const [currentAccount, setCurrentAccount] = useState("");
   const [minted, setMinted] = useState(0);
